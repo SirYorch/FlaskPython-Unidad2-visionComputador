@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visión por Computador - Práctica 2</title>
+    <link rel="stylesheet" href="/static/stylesPropio.css">
+</head>
+<body>
+
+    <header>
+        <h1>Práctica 2:<br>Visión por Computador</h1>
+        <div>
+            <h2>Python + Flask + OpenCV + ESP32-CAM</h2>
+            <p><strong>Autores:</strong> Jorge Cueva &nbsp; | &nbsp; Kevin Yansaguano</p>
+        </div>
+    </header>
+
+    <main>
+        <section class="video-section">
+            <img src="/video_stream" alt="Video Stream">
+            <button class="btn" href="/partb" onclick="location.href='/partb'">
+                Parte B:
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" height="15px" width="15px" class="icon">
+                    <path stroke-linejoin="round" stroke-linecap="round" stroke-miterlimit="10" stroke-width="1.5" stroke="#292D32" d="M8.91016 19.9201L15.4302 13.4001C16.2002 12.6301 16.2002 11.3701 15.4302 10.6001L8.91016 4.08008"></path>
+                </svg>
+            </button>
+        </section>
+
+        
+        <section>
+            <div class="section-header" onclick="toggleSection(this)">
+                <h4>Descripción del Proyecto</h4>
+                <span class="toggle-icon">▼</span>
+            </div>
+            <div class="section-content">
+                <p>
+                    Este proyecto integra un servidor desarrollado con Flask para incorporar las imagenes recibidas desde una camara de una placa ESP32-CAM, y procesarlas utilizando OpenCV. La aplicación permite la transmisión en tiempo real de video capturado por la ESP32-CAM, y realiza procesamiento de visión por computador desde las categorías de eliminación de fondo, muestra de fps, además de filtros y operaciones, generación de ruido, gaussiano y speckle, filtros, reducción de ruido, y 2 algoritmos de segmentación de bordes.
+                </p>
+            </div>
+        </section>
+
+        
+        <section>
+            <div class="section-header" onclick="toggleSection(this)">
+                <h4>Objetivos de la Práctica</h4>
+                <span class="toggle-icon">▼</span>
+            </div>
+            <div class="section-content">
+                <ul>
+                    <li>Generar una página web que permita una interfaz a los filtros y uso de la imagen recibida</li>
+                    <li>Realizar la conexión y transmisión de video desde la ESP32-CAM hacia el servidor</li>
+                    <li>Procesar los fotogramas capturados utilizando OpenCV</li>
+                    <li>Aplicar técnicas de visión por computador desde el servidor python</li>
+                    <li>Integrar correctamente Flask como intermediario entre el hardware y el procesamiento</li>
+                </ul>
+            </div>
+        </section>
+
+        
+        <section>
+            <div class="section-header" onclick="toggleSection(this)">
+                <h4>Herramientas Utilizadas</h4>
+                <span class="toggle-icon">▼</span>
+            </div>
+            <div class="section-content">
+                <ul>
+                    <li>Python 3</li>
+                    <li>Flask</li>
+                    <li>OpenCV</li>
+                    <li>ESP32-CAM</li>
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>Universidad Politécnica Salesiana</p>
+        <p><strong>2025</strong></p>
+        <p>Asignatura: Visión por Computador</p>
+    </footer>
+
+    <script src="/static/js.js"></script>
+    
+    
+</body>
+</html>

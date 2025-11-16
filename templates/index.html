@@ -4,29 +4,244 @@
      <meta charset="UTF-8">
      <meta http-equiv="X-UA-Compatible" content="IE=edge">
      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-     <style>
-          .container{
-               margin: 0;
-               padding: 0;
-               width: 100%;
-               height: 100vh;
-               background-color: #f1f1bc;
-               color: black;
-               text-align: center;
-          }
-          .containerHeader{
-               display: flex;
-               flex-direction: column;
-               align-items: center;
-          }
-     </style>
-     <title>Videostreaming ESP32-CAM</title>
+     <link rel="stylesheet" href="/static/stylesPropio.css">
+
+     <title>Procesamiento de Video ESP32-CAM - Completo</title>
 </head>
-<body class = "container">
-     <div class="containerHeader">
-          <h1>Video Streaming</h1>
-          <img src="{{ url_for('static', filename='Header.webp') }}" alt="Image header" width="50%">
+<body>
+     <div class="container">
+          <div class="header">
+               <h1>🎥 Sistema Completo de Procesamiento de Video ESP32-CAM</h1>
+               <p>Análisis avanzado de imagen en tiempo real con operaciones morfológicas</p>
+          </div>
+          
+          <div class="nav-tabs">
+               <button class="nav-tab active" onclick="window.location.href='/'">
+                    📹 Procesamiento en Vivo
+               </button>
+               <button class="nav-tab" onclick="window.location.href='/morphological'">
+                    🏥 Operaciones Morfológicas (Imágenes Médicas)
+               </button>
+          </div>
+          
+          <div class="controls">
+               <button class="btn btn-normal active" onclick="setMode('normal')" id="btn-normal">
+                    📹 Normal
+               </button>
+               <button class="btn btn-lighting" onclick="setMode('lighting')" id="btn-lighting">
+                    💡 Iluminación
+               </button>
+               <button class="btn btn-noise" onclick="setMode('noise')" id="btn-noise">
+                    🔊 Ruido Gaussiano
+               </button>
+               <button class="btn btn-salt" onclick="setMode('salt_pepper')" id="btn-salt_pepper">
+                    🧂 Sal y Pimienta
+               </button>
+               <button class="btn btn-edges" onclick="setMode('edges')" id="btn-edges">
+                    🔍 Detección de Bordes
+               </button>
+               <button class="btn btn-background" onclick="setMode('background')" id="btn-background">
+                    🎭 Eliminación de Fondo
+               </button>
+          </div>
+          
+          <div class="video-container">
+               <img src="{{ url_for('video_stream') }}" alt="Video Stream">
+          </div>
+          
+          <div class="info-panel">
+               <div class="info-box" id="info-normal">
+                    <h3>📹 Modo Normal</h3>
+                    <p>Visualización directa del video capturado por la cámara ESP32-CAM con contador de FPS en tiempo real.</p>
+               </div>
+               
+               <div class="info-box" id="info-lighting" style="display:none;">
+                    <h3>💡 Mejora de Iluminación</h3>
+                    <p>Compara tres técnicas de mejora de iluminación:</p>
+                    <ul>
+                         <li><strong>Ecualización de Histograma:</strong> Redistribuye intensidades para maximizar contraste global</li>
+                         <li><strong>CLAHE:</strong> Ecualización adaptativa que limita la amplificación en regiones locales</li>
+                         <li><strong>Corrección Gamma:</strong> Transformación no lineal (V_out = V_in^gamma) que ajusta brillo preservando detalles</li>
+                    </ul>
+               </div>
+               
+               <div class="info-box" id="info-noise" style="display:none;">
+                    <h3>🔊 Generación y Reducción de Ruido Gaussiano/Speckle</h3>
+                    <p>Demostración de tipos de ruido y técnicas de filtrado:</p>
+                    <ul>
+                         <li><strong>Ruido Gaussiano:</strong> Ruido aditivo con distribución normal N(μ, σ²)</li>
+                         <li><strong>Ruido Speckle:</strong> Ruido multiplicativo común en imágenes de radar</li>
+                         <li><strong>Filtro Bilateral:</strong> Reduce ruido preservando bordes mediante filtrado espacial e intensidad</li>
+                    </ul>
+               </div>
+               
+               <div class="info-box" id="info-salt_pepper" style="display:none;">
+                    <h3>🧂 Ruido Sal y Pimienta con Filtros Comparativos</h3>
+                    <p><strong>Visualización en grid 2x3:</strong></p>
+                    <ul>
+                         <li><strong>Original:</strong> Imagen capturada sin procesar</li>
+                         <li><strong>Salt & Pepper:</strong> Ruido impulsivo (píxeles blancos=sal, negros=pimienta)</li>
+                         <li><strong>Median Filter (OpenCV):</strong> Reemplaza cada píxel con la mediana de su vecindario - <em>Mejor para sal y pimienta</em></li>
+                         <li><strong>Blur Filter (OpenCV):</strong> Promedio simple de píxeles vecinos</li>
+                         <li><strong>Gaussian Filter (OpenCV):</strong> Promedio ponderado con distribución gaussiana</li>
+                         <li><strong>PyTorch Conv Filter:</strong> Convolución usando torch.nn.functional.conv2d con kernel uniforme</li>
+                    </ul>
+                    
+                    <h4 style="margin-top: 20px; color: #667eea;">📊 Comparación de Resultados:</h4>
+                    <table class="comparison-table">
+                         <tr>
+                              <th>Filtro</th>
+                              <th>Efectividad</th>
+                              <th>Velocidad</th>
+                              <th>Preservación de Bordes</th>
+                              <th>Mejor Uso</th>
+                         </tr>
+                         <tr>
+                              <td><strong>Median</strong></td>
+                              <td>⭐⭐⭐⭐⭐</td>
+                              <td>⭐⭐⭐</td>
+                              <td>⭐⭐⭐⭐</td>
+                              <td>Ruido sal y pimienta</td>
+                         </tr>
+                         <tr>
+                              <td><strong>Blur</strong></td>
+                              <td>⭐⭐</td>
+                              <td>⭐⭐⭐⭐⭐</td>
+                              <td>⭐⭐</td>
+                              <td>Suavizado rápido general</td>
+                         </tr>
+                         <tr>
+                              <td><strong>Gaussian</strong></td>
+                              <td>⭐⭐⭐</td>
+                              <td>⭐⭐⭐⭐</td>
+                              <td>⭐⭐⭐</td>
+                              <td>Ruido gaussiano</td>
+                         </tr>
+                         <tr>
+                              <td><strong>PyTorch Conv</strong></td>
+                              <td>⭐⭐⭐</td>
+                              <td>⭐⭐⭐⭐</td>
+                              <td>⭐⭐⭐</td>
+                              <td>Procesamiento GPU/personalizado</td>
+                         </tr>
+                    </table>
+                    
+                    <p style="margin-top: 15px;"><strong>Conclusión:</strong> El filtro de mediana obtiene los mejores resultados para ruido sal y pimienta porque es robusto a valores atípicos (outliers). Los filtros basados en promedio (Blur, Gaussian, PyTorch Conv) tienden a difuminar más la imagen.</p>
+               </div>
+               
+               <div class="info-box" id="info-edges" style="display:none;">
+                    <h3>🔍 Detección de Bordes - Comparación con/sin Suavizado</h3>
+                    <p><strong>Visualización en grid 2x3:</strong></p>
+                    
+                    <h4 style="color: #667eea; margin-top: 15px;">Algoritmos Implementados:</h4>
+                    <ul>
+                         <li><strong>Sobel:</strong> Usa kernels de convolución para detectar gradientes horizontales y verticales
+                              <ul>
+                                   <li>Kernel X: [[-1,0,1], [-2,0,2], [-1,0,1]]</li>
+                                   <li>Kernel Y: [[-1,-2,-1], [0,0,0], [1,2,1]]</li>
+                                   <li>Magnitud: √(Gx² + Gy²)</li>
+                              </ul>
+                         </li>
+                         <li><strong>Canny:</strong> Algoritmo multi-etapa (Gaussian → Gradientes → Non-max suppression → Hysteresis)
+                              <ul>
+                                   <li>Más sofisticado, bordes más precisos</li>
+                                   <li>Usa umbrales duales (50, 150) para detección</li>
+                              </ul>
+                         </li>
+                         <li><strong>Laplaciano:</strong> Detecta cambios de segunda derivada
+                              <ul>
+                                   <li>Kernel: [[0,1,0], [1,-4,1], [0,1,0]]</li>
+                                   <li>Sensible al ruido</li>
+                              </ul>
+                         </li>
+                    </ul>
+                    
+                    <h4 style="color: #667eea; margin-top: 15px;">📊 Impacto del Suavizado Previo:</h4>
+                    <table class="comparison-table">
+                         <tr>
+                              <th>Algoritmo</th>
+                              <th>Sin Blur</th>
+                              <th>Con Blur (Gaussian 5x5)</th>
+                              <th>Recomendación</th>
+                         </tr>
+                         <tr>
+                              <td><strong>Sobel</strong></td>
+                              <td>Más ruido, bordes detallados</td>
+                              <td>Bordes más limpios, menos ruido</td>
+                              <td>✅ Con blur para imágenes ruidosas</td>
+                         </tr>
+                         <tr>
+                              <td><strong>Canny</strong></td>
+                              <td>Ya incluye Gaussian interno</td>
+                              <td>Más suave, puede perder detalles</td>
+                              <td>⚠️ Sin blur adicional usualmente</td>
+                         </tr>
+                         <tr>
+                              <td><strong>Laplacian</strong></td>
+                              <td>Muy sensible al ruido</td>
+                              <td>Necesario para reducir ruido</td>
+                              <td>✅ Siempre con blur</td>
+                         </tr>
+                    </table>
+                    
+                    <p style="margin-top: 15px;"><strong>Conclusión:</strong> El suavizado previo es crucial para Laplaciano y beneficioso para Sobel en imágenes ruidosas. Canny ya incorpora suavizado gaussiano en su primera etapa, por lo que blur adicional puede ser redundante.</p>
+               </div>
+               
+               <div class="info-box" id="info-background" style="display:none;">
+                    <h3>🎭 Eliminación de Fondo</h3>
+                    <p>Utiliza el algoritmo MOG2 (Mixture of Gaussians) para segmentar foreground y background:</p>
+                    <ul>
+                         <li><strong>Máscara:</strong> Visualización de píxeles clasificados como foreground (blanco)</li>
+                         <li><strong>Foreground Only:</strong> Resultado de aplicar operación bitwise AND con la máscara</li>
+                         <li>El sistema se adapta automáticamente a cambios de iluminación</li>
+                         <li>Incluye detección de sombras (píxeles grises en la máscara)</li>
+                    </ul>
+               </div>
+          </div>
      </div>
-     <img src="{{ url_for('video_stream') }}">
+     
+     <div class="status" id="status">
+          Modo: Normal
+     </div>
+     
+     <script>
+          let currentMode = 'normal';
+          
+          function setMode(mode) {
+               fetch(`/set_mode/${mode}`)
+                    .then(response => response.json())
+                    .then(data => {
+                         if (data.status === 'success') {
+                              // Actualizar botones activos
+                              document.querySelectorAll('.btn').forEach(btn => {
+                                   btn.classList.remove('active');
+                              });
+                              document.getElementById(`btn-${mode}`).classList.add('active');
+                              
+                              // Actualizar información
+                              document.querySelectorAll('.info-box').forEach(box => {
+                                   box.style.display = 'none';
+                              });
+                              document.getElementById(`info-${mode}`).style.display = 'block';
+                              
+                              // Actualizar status
+                              const modeNames = {
+                                   'normal': 'Normal',
+                                   'lighting': 'Mejora de Iluminación',
+                                   'noise': 'Ruido Gaussiano/Speckle',
+                                   'salt_pepper': 'Sal y Pimienta + Filtros',
+                                   'edges': 'Detección de Bordes',
+                                   'background': 'Eliminación de Fondo'
+                              };
+                              document.getElementById('status').textContent = `Modo: ${modeNames[mode]}`;
+                              
+                              currentMode = mode;
+                         }
+                    })
+                    .catch(error => {
+                         console.error('Error:', error);
+                    });
+          }
+     </script>
 </body>
 </html>
