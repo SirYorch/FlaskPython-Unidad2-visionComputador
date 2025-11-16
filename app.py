@@ -67,17 +67,10 @@ def clahe_enhancement(image, clip_limit=2.0, tile_grid_size=(8, 8)):
 
 ##
 
-# EDITAR MÉTODO EXTRA
+# el método extra se hace directo es la ecualización logarítmica
 
 ##
 
-
-# def gamma_correction(image, gamma=1.5):
-#     """Corrección Gamma"""
-#     inv_gamma = 1.0 / gamma
-#     table = np.array([((i / 255.0) ** inv_gamma) * 255 
-#                       for i in np.arange(0, 256)]).astype("uint8")
-#     return cv2.LUT(image, table)
 
 # ============== NOISE FUNCTIONS ==============
 
@@ -102,21 +95,6 @@ def add_speckle_noise(image, scale=0.1):
     return noisy
 
 
-def add_salt_pepper_noise(image, salt_prob=0.01, pepper_prob=0.01):
-    """Añade ruido sal y pimienta"""
-    noisy = image.copy()
-    
-    # Salt noise (white pixels)
-    num_salt = np.ceil(salt_prob * image.size)
-    coords = [np.random.randint(0, i - 1, int(num_salt)) for i in image.shape]
-    noisy[coords[0], coords[1]] = 255
-    
-    # Pepper noise (black pixels)
-    num_pepper = np.ceil(pepper_prob * image.size)
-    coords = [np.random.randint(0, i - 1, int(num_pepper)) for i in image.shape]
-    noisy[coords[0], coords[1]] = 0
-    
-    return noisy
 
 # ============== DENOISING FILTERS ==============
 
@@ -209,135 +187,10 @@ def edge_detection_canny(image, use_blur=False, threshold1=50, threshold2=150):
     return edges
 
 
-# ============== MORPHOLOGICAL OPERATIONS ==============
-
-def apply_morphological_operations(image, kernel_size=37):
-    """
-    Aplica operaciones morfológicas según el artículo:
-    "Using morphological transforms to enhance the contrast of medical images"
-    """
-    # Asegurar que la imagen está en escala de grises
-    if len(image.shape) == 3:
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    else:
-        gray = image.copy()
-    
-    # Crear elemento estructurante (circular es mejor para imágenes médicas)
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size))
-    
-    # Erosión
-    erosion = cv2.erode(gray, kernel, iterations=1)
-    
-    # Dilatación
-    dilation = cv2.dilate(gray, kernel, iterations=1)
-    
-    # Top Hat (Original - Opening)
-    opening = cv2.morphologyEx(gray, cv2.MORPH_OPEN, kernel)
-    top_hat = cv2.subtract(gray, opening)
-    
-    # Black Hat (Closing - Original)
-    closing = cv2.morphologyEx(gray, cv2.MORPH_CLOSE, kernel)
-    black_hat = cv2.subtract(closing, gray)
-    
-    # Enhanced: Original + (Top Hat - Black Hat)
-    # Normalizar top_hat y black_hat para evitar overflow
-    top_hat_norm = top_hat.astype(np.float32)
-    black_hat_norm = black_hat.astype(np.float32)
-    
-    difference = top_hat_norm - black_hat_norm
-    enhanced = gray.astype(np.float32) + difference
-    enhanced = np.clip(enhanced, 0, 255).astype(np.uint8)
-    
-    # Aplicar CLAHE adicional para mejor contraste
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-    enhanced_clahe = clahe.apply(enhanced)
-    
-    return {
-        'original': gray,
-        'erosion': erosion,
-        'dilation': dilation,
-        'top_hat': top_hat,
-        'black_hat': black_hat,
-        'enhanced': enhanced,
-        'enhanced_clahe': enhanced_clahe
-    }
-
-def combine_morphological_results(results, kernel_size):
-    """Combina los resultados morfológicos en una sola imagen para visualización"""
-    h, w = results['original'].shape
-    
-    # Crear imagen 3x3 (eliminamos enhanced_clahe de la visualización principal)
-    combined = np.zeros((h * 3, w * 3), dtype=np.uint8)
-    
-    # Fila 1
-    combined[0:h, 0:w] = results['original']
-    combined[0:h, w:2*w] = results['erosion']
-    combined[0:h, 2*w:3*w] = results['dilation']
-    
-    # Fila 2
-    combined[h:2*h, 0:w] = results['top_hat']
-    combined[h:2*h, w:2*w] = results['black_hat']
-    combined[h:2*h, 2*w:3*w] = results['enhanced']
-    
-    # Fila 3 - Comparaciones
-    # Ecualización para comparación
-    hist_eq = cv2.equalizeHist(results['original'])
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-    clahe_result = clahe.apply(results['original'])
-    
-    combined[2*h:3*h, 0:w] = hist_eq
-    combined[2*h:3*h, w:2*w] = clahe_result
-    combined[2*h:3*h, 2*w:3*w] = results['enhanced_clahe']
-    
-    # Convertir a BGR para agregar texto en color
-    combined_bgr = cv2.cvtColor(combined, cv2.COLOR_GRAY2BGR)
-    
-    # Añadir etiquetas
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    color = (0, 255, 0)
-    thickness = 2
-    font_scale = 0.7
-    
-    labels = [
-        (10, 30, f'Original (Kernel: {kernel_size}x{kernel_size})'),
-        (w+10, 30, 'Erosion'),
-        (2*w+10, 30, 'Dilation'),
-        (10, h+30, 'Top Hat'),
-        (w+10, h+30, 'Black Hat'),
-        (2*w+10, h+30, 'Original + (TH - BH)'),
-        (10, 2*h+30, 'Histogram Eq.'),
-        (w+10, 2*h+30, 'CLAHE'),
-        (2*w+10, 2*h+30, 'Enhanced + CLAHE'),
-    ]
-    
-    for x, y, label in labels:
-        cv2.putText(combined_bgr, label, (x, y), font, font_scale, color, thickness)
-    
-    return combined_bgr
-
-# ============== BACKGROUND REMOVAL ==============
-
-def remove_background(frame, fg_mask):
-    """Aplica la máscara para extraer solo el foreground"""
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-    fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_OPEN, kernel)
-    fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_CLOSE, kernel)
-    foreground = cv2.bitwise_and(frame, frame, mask=fg_mask)
-    return foreground, fg_mask
-
-# ============== VIDEO PROCESSING ==============
 
 def video_capture():
     
-    res = requests.get(stream_url, stream=True)
-
-    # median_mask = torch.ones(3, 3, dtype = torch.float32)/9.0
-    # kernel = median_mask.unsqueeze(0).unsqueeze(0)
-    # convolved_output = None
-    # img_output = None
-    
-    #Los eliminamos porque vamos a hacer nosotros los nuestros
-    
+    res = requests.get(stream_url, stream=True)    
     
     background_frames = []
     background_median = None
@@ -394,22 +247,30 @@ def video_capture():
                 dframe = cv2.absdiff(gray, background_median)
                 _, dframe = cv2.threshold(dframe, 30, 255, cv2.THRESH_BINARY)
                 
+                # Background bitwise
                 foreground_color = cv2.bitwise_and(frame, frame, mask=dframe)
                 
+                # Ruido Gaussiano
                 gaussiano = add_gaussian_noise(frame)
                 
+                # Ruido speckle
                 speckle = add_speckle_noise(frame)
+                
+                # Ruido Gaussiano en B/N
                 gaussianobn = add_gaussian_noise(gray)
                 
                 
-                
+                # Denoising con PyTorch usando el ruido gaussiano
                 denoise1 = denoise_pytorch_gaussian(gaussianobn)
                 
                 
+                # Filtros mediana
                 mediana = apply_median_filter(frame)
                 
+                # Filtros blur
                 blur = apply_blur_filter(frame)
                 
+                # Filtros gaussiano
                 gaussianoblur = apply_gaussian_filter(frame)
                 
                 
@@ -435,7 +296,7 @@ def video_capture():
                 # Crear imagen combinada
                 total_image = np.zeros((height*4, width * 4, 3), dtype=np.uint8)
 
-                # FILA 1: Original, Hist Eq, CLAHE, Log
+                # FILA 1:
                 total_image[0:height, 0:width] = gray.reshape(height, width, 1).repeat(3, axis=2)
                 total_image[0:height, width:width*2] = hist_eq.reshape(height, width, 1).repeat(3, axis=2)
                 total_image[0:height, width*2:width*3] = clahe_img.reshape(height, width, 1).repeat(3, axis=2)
@@ -461,6 +322,10 @@ def video_capture():
                 total_image[height*3:height*4, width*3:width*4] = sobel_blur.reshape(height, width, 1).repeat(3, axis=2)
                 
                 
+                
+                
+                # Etiquetas
+                #Fila1
                 cv2.putText(total_image, f'FPS: {fps:.1f}', (10, 30), 
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, 255, 2)
                 cv2.putText(total_image, f'Original', (10, 60), 
@@ -472,6 +337,7 @@ def video_capture():
                 cv2.putText(total_image, 'Logaritmica', (width*3+10, 30), 
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, 255, 2)
                 
+                #Fila2
                 cv2.putText(total_image, 'bg-remove', (10, 30+height), 
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, 255, 2)
                 cv2.putText(total_image, 'ruido gauss ', (width+10, 30+height), 
@@ -481,6 +347,7 @@ def video_capture():
                 cv2.putText(total_image, 'ruido gauss B/N', ((width*3)+10, 30+height), 
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, 255, 2)
                 
+                #Fila3
                 cv2.putText(total_image, 'denoise gauss', (10, 30+(height*2)), 
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, 255, 2)
                 cv2.putText(total_image, 'mediana', ((width)+10, 30+(height*2)), 
@@ -490,6 +357,7 @@ def video_capture():
                 cv2.putText(total_image, 'gauss blur', ((width*3)+10, 30+(height*2)), 
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, 255, 2)
                 
+                #Fila4
                 cv2.putText(total_image, 'Canny', (10, 30+(height*3)), 
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, 255, 2)
                 cv2.putText(total_image, 'Sobel', ((width)+10, 30+(height*3)), 
@@ -514,16 +382,20 @@ def video_capture():
                 continue
 
 # ============== FLASK ROUTES ==============
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+
 
 @app.get("/partb", response_class=HTMLResponse)
 async def morph(request: Request):
     return templates.TemplateResponse("morph.html", {"request": request})
 
+
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     return templates.TemplateResponse("trabajo.html", {"request": request})
+
 
 @app.get("/video_stream")
 async def video_stream():
