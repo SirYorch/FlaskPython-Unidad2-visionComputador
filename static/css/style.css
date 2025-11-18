@@ -1,0 +1,137 @@
+
+
+/* Base */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --dark: #190933;
+    --main: #19647E;
+    --secondary: #28AFB0;
+    --gray: #DDCECD;
+    --light: #F7F4F3;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+/* Header */
+header {
+    background: linear-gradient(135deg, var(--main) 0%, var(--secondary) 100%);
+    color: white;
+    text-align: center;
+    padding: 30px 20px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+h1 {
+    font-size: 42px;
+    font-weight: 700;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+    line-height: 1.2;
+}
+
+header div {
+    text-align: center;
+}
+
+header h2 {
+    font-size: 20px;
+    font-weight: 400;
+    margin-bottom: 10px;
+    opacity: 0.95;
+}
+
+header div p {
+    margin-top: 15px;
+    font-size: 16px;
+    opacity: 0.9;
+}
+
+/* Main */
+main {
+    margin-top: 180px;
+    margin-bottom: 100px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Footer */
+footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: linear-gradient(135deg, var(--dark) 0%, var(--main) 100%);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    color: white;
+    padding: 20px;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+    flex-wrap: wrap;
+}
+
+footer p {
+    font-size: 18px;
+    margin: 5px 15px;
+}
+
+footer strong {
+    font-weight: 700;
+    font-size: 22px;
+}
+
+
+
+/*
+ * ========================================
+ * ESTILOS DE LA CUADRÍCULA (GRID) Y EL PANEL 70%
+ * ========================================
+ */
+.grid-panel-70 {
+    width: 70%; 
+    margin: 20px auto; 
+    padding: 20px;
+    background-color: #f7f7f7; 
+    border: 1px solid #c0c0c0;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px; 
+}
+.img-box {
+    text-align: center; 
+}
+.img-box img {
+    max-width: 100%; 
+    height: auto;
+    border: 1px solid #ccc;
+}
+.caption {
+    margin-top: 5px;
+    font-weight: bold;
+}

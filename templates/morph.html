@@ -4,29 +4,82 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Visión por Computador - Práctica 2</title>
-    <link rel="stylesheet" href="/static/stylesPropio.css">
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
 
     <header>
         <h1>Práctica 2:<br>Visión por Computador</h1>
         <div>
-            <h2>Python + Flask + OpenCV + ESP32-CAM</h2>
+            <h2>Python + Flask + FastApi + ESP32-CAM</h2>
             <p><strong>Autores:</strong> Jorge Cueva &nbsp; | &nbsp; Kevin Yansaguano</p>
         </div>
     </header>
 
      <main>
-       <section class="video-section">
-            <img src="/video_stream" alt="Video Stream">
-            <button class="btn" href="/" onclick="location.href='/'">
-                Parte A:
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" height="15px" width="15px" class="icon">
-                    <path stroke-linejoin="round" stroke-linecap="round" stroke-miterlimit="10" stroke-width="1.5" stroke="#292D32" d="M8.91016 19.9201L15.4302 13.4001C16.2002 12.6301 16.2002 11.3701 15.4302 10.6001L8.91016 4.08008"></path>
-                </svg>
-            </button>
-        </section>
+       <h1>Operaciones Morfológicas Aplicadas</h1>
+    
+    
+    <div class="image-selection">
+        <h3>Selecciona una imagen:</h3>
+        <input type="radio" name="image_name" value="img1" {% if image_name == "img1" %} checked {% endif %} onchange="updateImage()"> Radiografia
+        <input type="radio" name="image_name" value="img2" {% if image_name == "img2" %} checked {% endif %} onchange="updateImage()"> Angiografia
+        <input type="radio" name="image_name" value="img3" {% if image_name == "img3" %} checked {% endif %} onchange="updateImage()"> TAC
+        
+        <br><br>
 
+        <h3>Selecciona el tamaño del kernel:</h3>
+        <input type="range" id="kernel-slider" name="kernel_size" min="1" max="37" value="{{ kernel_size }}" oninput="updateSlider(this.value)">
+        <span id="kernel-value">{{ kernel_size }}</span>
+    </div>
+
+   <div class="image-result">
+    <div id="processed-images-container"> 
+    <h3>Resultados de Operaciones Morfológicas (Cuadrícula 3x3)</h3>
+    
+    {% if images_data.eroded %}
+    
+    <div class="grid-panel-70">
+        <div class="grid"> 
+            
+            <div class="img-box">
+                <h4 class="caption">Original</h4>
+                <img id="image-original" src="/static/images/{{ image_name }}.png" alt="Imagen Original">
+            </div>
+
+            <div class="img-box">
+                <h4 class="caption">Erosión</h4>
+                <img src="data:image/png;base64,{{ images_data.eroded }}" alt="Erosión">
+            </div>
+
+            <div class="img-box">
+                <h4 class="caption">Dilatación</h4>
+                <img src="data:image/png;base64,{{ images_data.dilated }}" alt="Dilatación">
+            </div>
+            
+            <div class="img-box">
+                <h4 class="caption">Top Hat</h4>
+                <img src="data:image/png;base64,{{ images_data.tophat }}" alt="Top Hat">
+            </div>
+
+            <div class="img-box">
+                <h4 class="caption">Black Hat</h4>
+                <img src="data:image/png;base64,{{ images_data.blackhat }}" alt="Black Hat">
+            </div>
+
+            <div class="img-box">
+                <h4 class="caption">Original + (Top Hat - Black Hat)</h4>
+                <img src="data:image/png;base64,{{ images_data.combined }}" alt="Imagen Combinada"> 
+            </div>
+            
+  
+        </div>
+    </div>
+    {% else %}
+    <p>No hay imágenes procesadas disponibles.</p>
+    {% endif %}
+</div>
+</div>
 
      </main>
 
@@ -36,8 +89,13 @@
         <p>Asignatura: Visión por Computador</p>
     </footer>
 
-    <script src="/static/js.js"></script>
+    <script src="/static/js/ja.js"></script>
     
     
 </body>
 </html>
+
+
+
+
+

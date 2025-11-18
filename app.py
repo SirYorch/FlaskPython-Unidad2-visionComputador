@@ -6,20 +6,22 @@
 
 # from flask import Flask, render_template, Response
 # we prefer to use fastAPI for simplicity in the documentation
-from fastapi import FastAPI, File, UploadFile, Request
-from fastapi.responses import StreamingResponse, HTMLResponse, JSONResponse
+from fastapi import FastAPI, Form, File, UploadFile, Request, HTTPException 
+from fastapi.responses import StreamingResponse, HTMLResponse, JSONResponse, Response
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 
 
 from io import BytesIO
-
+import uvicorn
 import cv2
 import numpy as np
 import requests
 import torch
 import torch.nn.functional as F
 import time
+import base64 
+from pathlib import Path
 
 # app = Flask(__name__)
 app = FastAPI()
@@ -33,6 +35,20 @@ _ST = '/stream'
 SEP = ':'
 
 stream_url = ''.join([_URL,SEP,_PORT,_ST])
+
+
+# Carpeta de imágenes estáticas
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Plantillas para la web
+templates = Jinja2Templates(directory="templates")
+
+# Imágenes a elegir
+image_paths = {
+    "img1": "static/images/img1.png",
+    "img2": "static/images/img2.png",
+    "img3": "static/images/img3.png",
+}
 
 
 class FPSCounter:
@@ -381,20 +397,32 @@ def video_capture():
                 print(f"Error: {e}")
                 continue
 
+
+
+
+
+#
+
+
+def apply_morphological_operations(image: np.ndarray, kernel_size: int):
+    kernel = np.ones((kernel_size, kernel_size), np.uint8)
+    eroded = cv2.erode(image, kernel)
+    dilated = cv2.dilate(image, kernel)
+    tophat = cv2.morphologyEx(image, cv2.MORPH_TOPHAT, kernel)
+    blackhat = cv2.morphologyEx(image, cv2.MORPH_BLACKHAT, kernel)
+    combined = cv2.add(image, cv2.subtract(tophat, blackhat))
+
+    return eroded, dilated, tophat, blackhat, combined
+
+def encode_image_to_base64(image: np.ndarray) -> str:
+    """Convierte la imagen en un array numpy a base64"""
+    _, buffer = cv2.imencode('.png', image)
+    return base64.b64encode(buffer).decode('utf-8')
+
+
 # ============== FLASK ROUTES ==============
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
 
-
-@app.get("/partb", response_class=HTMLResponse)
-async def morph(request: Request):
-    return templates.TemplateResponse("morph.html", {"request": request})
-
-
-@app.get("/", response_class=HTMLResponse)
-async def index(request: Request):
-    return templates.TemplateResponse("trabajo.html", {"request": request})
 
 
 @app.get("/video_stream")
@@ -436,10 +464,44 @@ async def act_tam(dato: float):
     tam = dato
     return {"status": "success", "tamano-mascara": tam}
 
+@app.get("/", response_class=HTMLResponse)
+async def index(request: Request):
+    return templates.TemplateResponse("trabajo.html", {"request": request})
 
 
+@app.get("/partb", response_class=HTMLResponse)
+async def morph(request: Request, image_name: str = "img1", kernel_size: int = 37):
 
+    if image_name not in image_paths:
+        raise HTTPException(status_code=404, detail=f"Imagen '{image_name}' no encontrada.")
+    
+    img_path = image_paths.get(image_name)
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host='0.0.0.0', port=5000)
+    if not Path(img_path).exists():
+        raise HTTPException(status_code=404, detail=f"Imagen '{image_name}' no encontrada en el directorio.")
+
+    image = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+
+    if image is None:
+        raise HTTPException(status_code=400, detail="Error al cargar la imagen.")
+
+    eroded, dilated, tophat, blackhat, combined = apply_morphological_operations(image, kernel_size)
+
+    images_data = {
+        "eroded": encode_image_to_base64(eroded),
+        "dilated": encode_image_to_base64(dilated),
+        "tophat": encode_image_to_base64(tophat),
+        "blackhat": encode_image_to_base64(blackhat),
+        "combined": encode_image_to_base64(combined),
+    }
+
+    if not images_data:
+        raise HTTPException(status_code=500, detail="Error al procesar las imágenes.")
+
+    return templates.TemplateResponse("morph.html", {
+        "request": request,
+        "image_paths": image_paths,
+        "image_name": image_name,
+        "kernel_size": kernel_size,
+        "images_data": images_data  
+    })
