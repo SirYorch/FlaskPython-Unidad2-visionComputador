@@ -222,6 +222,14 @@ section:hover {
     transform: translateX(30%);
   }
 }
+.horizontal{
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.horizontal div{
+    width: 300px;
+}
 
 
 

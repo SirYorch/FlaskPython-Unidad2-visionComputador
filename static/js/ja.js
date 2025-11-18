@@ -1,7 +1,7 @@
-            function updateSlider(value) {
-            document.getElementById("kernel-value").textContent = value;
-            updateImage();
-        }
+function updateSlider(value) {
+    document.getElementById("kernel-value").textContent = value;
+    updateImage();
+}
 
         function updateImage() {
             const imageName = document.querySelector('input[name="image_name"]:checked').value;

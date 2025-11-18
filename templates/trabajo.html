@@ -18,6 +18,38 @@
 
     <main>
         <section class="video-section">
+            <div>
+                <h2>Editables</h2>
+                
+                <div class = horizontal>
+                    <div>
+                        <h3>Selecciona la media:</h3>
+                        <input type="range" id="kernel-slider" name="kernel_size" min="-50" max="50" value="1" oninput="updateMedia(this.value)">
+                        <span id="media">{{ media }}</span>
+                    </div>
+                    <div>
+                        <h3>Selecciona la varianza:</h3>
+                        <input type="range" id="kernel-slider" name="kernel_size" min="1" max="100" value="1" oninput="updateVarianza(this.value)">
+                        <span id="varianza">{{ varianza }}</span>
+                    </div>
+                    
+                    <div>
+                        <h3>Selecciona la desviación estandar:</h3>
+                        <input type="range" id="kernel-slider" name="kernel_size" min="1" max="50" value="1" oninput="updateDesvEst(this.value)">
+                        <span id="desvEst">{{ desvEst }}</span>
+                    </div>
+
+                    <div>
+                        <h3>Selecciona el tamaño:</h3>
+                        <input type="range" id="kernel-slider" name="kernel_size" min="1" max="35" value="3" oninput="updateTam(this.value)">
+                        <span id="tam">{{ tam }}</span>
+                    </div>
+                </div>
+                
+            </div>
+
+
+            
             <img src="/video_stream" alt="Video Stream">
             <button class="btn" href="/partb" onclick="location.href='/partb'">
                 Parte B:
@@ -66,7 +98,7 @@
             <div class="section-content">
                 <ul>
                     <li>Python 3</li>
-                    <li>Flask</li>
+                    <li>FastAPI</li>
                     <li>OpenCV</li>
                     <li>ESP32-CAM</li>
                 </ul>

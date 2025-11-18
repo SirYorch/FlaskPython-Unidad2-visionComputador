@@ -6,7 +6,7 @@
 
 # from flask import Flask, render_template, Response
 # we prefer to use fastAPI for simplicity in the documentation
-from fastapi import FastAPI, Form, File, UploadFile, Request, HTTPException 
+from fastapi import FastAPI, Form, File, UploadFile, Request, HTTPException ,Body
 from fastapi.responses import StreamingResponse, HTMLResponse, JSONResponse, Response
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
@@ -22,6 +22,7 @@ import torch.nn.functional as F
 import time
 import base64 
 from pathlib import Path
+import math
 
 # app = Flask(__name__)
 app = FastAPI()
@@ -49,6 +50,13 @@ image_paths = {
     "img2": "static/images/img2.png",
     "img3": "static/images/img3.png",
 }
+
+
+media = 3
+varianza = 3
+desv_est = 3
+tam = 3
+
 
 
 class FPSCounter:
@@ -92,18 +100,20 @@ def clahe_enhancement(image, clip_limit=2.0, tile_grid_size=(8, 8)):
 
 
 
-def add_gaussian_noise(image, mean=0, sigma=25):
+def add_gaussian_noise(image):
     """Añade ruido Gaussiano usando solo OpenCV"""
+    global media, desv_est
     noise = np.zeros_like(image, dtype=np.int16)
-    cv2.randn(noise, mean, sigma)   # llena la matriz con números normales
+    cv2.randn(noise, media, desv_est)   # llena la matriz con números normales
     noisy = image.astype(np.int16) + noise
     noisy = np.clip(noisy, 0, 255).astype(np.uint8)
     return noisy
 
-
-def add_speckle_noise(image, scale=0.1):
+def add_speckle_noise(image):
     """Añade ruido Speckle usando solo OpenCV"""
     noise = np.zeros_like(image, dtype=np.float32)
+    global varianza
+    scale = math.sqrt(varianza) if varianza > 0 else 0
     cv2.randn(noise, 0, scale * 255)
     img_f = image.astype(np.float32)
     noisy = img_f + img_f * (noise / 255.0)
@@ -149,29 +159,32 @@ def denoise_pytorch_gaussian(image, ksize=5, sigma=1.0):
 
 
 
-def apply_median_filter(image, ksize=5):
+def apply_median_filter(image):
     """
     Aplica filtro de Mediana
     ksize: tamaño de la máscara (debe ser impar: 3, 5, 7, 9, etc.)
     """
-    return cv2.medianBlur(image, ksize)
+    global tam
+    return cv2.medianBlur(image, tam)
 
 
-def apply_blur_filter(image, ksize=5):
+def apply_blur_filter(image):
     """
     Aplica filtro Blur (promedio)
     ksize: tamaño de la máscara (puede ser cualquier número: 3, 5, 7, etc.)
     """
-    return cv2.blur(image, (ksize, ksize))
+    global tam
+    return cv2.blur(image, (tam, tam))
 
 
-def apply_gaussian_filter(image, ksize=5, sigma=0):
+def apply_gaussian_filter(image):
     """
     Aplica filtro Gaussiano
     ksize: tamaño de la máscara (debe ser impar: 3, 5, 7, etc.)
     sigma: desviación estándar (si es 0, se calcula automáticamente)
     """
-    return cv2.GaussianBlur(image, (ksize, ksize), sigma)
+    global tam
+    return cv2.GaussianBlur(image, (tam, tam),  0)
 
 
 
@@ -432,36 +445,33 @@ async def video_stream():
         media_type="multipart/x-mixed-replace; boundary=frame"
     )
 
-media = 0
-varianza = 0
-desv_est = 0
-tam = 0
 
 @app.post("/act_media")
-async def act_media(dato: float):
+async def act_media(dato: float = Body(..., embed=True)):
     global media
     media = dato
     return {"status": "success", "media": media}
 
 
 @app.post("/act_varianza")
-async def act_varianza(dato: float):
+async def act_varianza(dato: float = Body(..., embed=True)):
     global varianza
     varianza = dato
     return {"status": "success", "varianza": varianza}
 
 
 @app.post("/act_desv")
-async def act_desv(dato: float):
+async def act_desv(dato: float  = Body(..., embed=True)):
     global desv_est
     desv_est = dato
     return {"status": "success", "desv_est": desv_est}
 
 
-@app.post("/act_desv")
-async def act_tam(dato: float):
+@app.post("/act_tam")
+async def act_tam(dato: float = Body(..., embed=True)):
     global tam
-    tam = dato
+    tam =  int(dato)
+    print(tam)
     return {"status": "success", "tamano-mascara": tam}
 
 @app.get("/", response_class=HTMLResponse)
@@ -505,3 +515,8 @@ async def morph(request: Request, image_name: str = "img1", kernel_size: int = 3
         "kernel_size": kernel_size,
         "images_data": images_data  
     })
+    
+    
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host='0.0.0.0', port=5000)
